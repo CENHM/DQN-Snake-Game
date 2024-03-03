@@ -8,7 +8,7 @@ BROAD_HEIGHT = 16
 N_ACTIONS = 4 # 8 or 4
 
 EPISODE = 1000
-EPSILON = 0.1
+EPSILON = 0.4
 
 # self._window_w = 640
 # self._window_h = 640

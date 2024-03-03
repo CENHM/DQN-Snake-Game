@@ -6,10 +6,10 @@ from utils import EPSILON, N_ACTIONS
 
 
 BATCH_SIZE = 32                                 # 样本数量
-LR = 0.01                                       # 学习率
+LR = 0.5                                       # 学习率
 GAMMA = 0.9                                     # reward discount
-TARGET_REPLACE_ITER = 2                       # 目标网络更新频率
-MEMORY_CAPACITY = 100
+TARGET_REPLACE_ITER = 5                      # 目标网络更新频率
+MEMORY_CAPACITY = 200
 
 
 class ResNet(nn.Module):
@@ -115,12 +115,10 @@ class ResNet(nn.Module):
         # flatten 维度展平
         self.flatten = nn.Flatten(start_dim=1)
         # FC 全连接层
-        self.fc = nn.Linear(512, N_ACTIONS - 1)
+        self.fc = nn.Linear(512, N_ACTIONS)
 
     def forward(self, x):
         # x = x.transpose(2, 0, 1)
-        x = torch.tensor(x).to(torch.float32)
-        x = torch.unsqueeze(x, 0)
 
         x = self.model0(x)
 
@@ -183,7 +181,6 @@ class DQN(object):
         self.memory_s, self.memory_a, self.memory_r, self.memory_s_next = [], [], [], []
 
         self.optimizer = torch.optim.Adam(self.eval_net.parameters(), lr=LR)
-        self.loss_func = nn.MSELoss()
 
     # e-greedy
     def choose_action(self, x):
@@ -208,23 +205,24 @@ class DQN(object):
         self.memory_counter += 1
 
     def check_learn(self):
-        if self.memory_counter > MEMORY_CAPACITY:
+        if self.memory_counter % MEMORY_CAPACITY == MEMORY_CAPACITY - 1:
             self.learn()
 
     def learn(self):
         # sample random minibatch of transition from memory
         sample_index = np.random.choice(MEMORY_CAPACITY, BATCH_SIZE)
 
-        selected_s = torch.FloatTensor([self.memory_s[index] for index in sample_index])
-        selected_a = torch.FloatTensor([self.memory_a[index] for index in sample_index])
+        selected_s = torch.FloatTensor([torch.squeeze(self.memory_s[index], 0).numpy() for index in sample_index])
+        selected_a = torch.LongTensor([self.memory_a[index] for index in sample_index])
         selected_r = torch.FloatTensor([self.memory_r[index] for index in sample_index])
-        selected_s_next = torch.FloatTensor([self.memory_s_next[index] for index in sample_index])
+        selected_s_next = torch.FloatTensor([torch.squeeze(self.memory_s[index], 0).numpy() for index in sample_index])
 
-        q_eval = self.eval_net(selected_s).gather(1, selected_a)
+        q_eval = self.eval_net(selected_s)
+        q_eval = q_eval.gather(1, selected_a.unsqueeze(1))
         q_next = self.target_net(selected_s_next).detach()
-        q_target = selected_r + GAMMA * q_next.max(1)[0].view(BATCH_SIZE, 1)
+        q_target = selected_r + GAMMA * q_next.max(1)[0]
 
-        loss = self.loss_func(q_eval, q_target)
+        loss = nn.MSELoss()(q_eval, q_target)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

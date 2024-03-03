@@ -1,21 +1,16 @@
 import random
 import time
-
+import torch
+import torch.nn as nn
 from GameGUI import SnakeGameGUI
-from environment import get_frame
 from utils import ACTION
 
 
 def main():
-    env = SnakeGameGUI()
-    while True:
-
-        action = random.randint(0, len(ACTION) - 1)
-        env.render(action)
-        time.sleep(1)
-        get_frame()
-        time.sleep(1)
-
+    tensor1 = torch.rand(5, 3).max(1)[0]
+    tensor2 = torch.rand(5)
+    tensor3 = nn.MSELoss()(tensor1, tensor2)
+    pass
 
 if __name__ == "__main__":
     main()

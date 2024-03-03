@@ -1,6 +1,7 @@
 import random
 from collections import namedtuple
 
+import torch
 import win32gui, win32print, win32api
 from PIL import ImageGrab, Image  # 操作图像
 import win32con  # 系统操作
@@ -40,14 +41,16 @@ class Environment:
         image = np.array(image)[39:839, 10:810, :]
 
         image = cv2.resize(np.array(image), (224, 224)).transpose(2, 0, 1)
+        image = torch.tensor(image).to(torch.float32)
+        image = torch.unsqueeze(image, 0)
         self.frame = image
 
     def get_reward(self, snake):
         x, y = snake[0].x, snake[0].y
         # Boundary
         if x < 0 or y < 0 or x >= BROAD_WIDTH or y >= BROAD_HEIGHT:
-            print("Hit boundary. Lose.")
-            return -100, True
+            # print("Hit boundary. Lose.")
+            return -100., True, False
         # Hit
         cnt = True
         for part in snake:
@@ -55,10 +58,10 @@ class Environment:
                 cnt = False
                 continue
             if x == part.x and y == part.y:
-                print("Hit yourself. Lose.")
-                return -100, True
+                # print("Hit yourself. Lose.")
+                return -100., True, False
         if x == self.apple.x and y == self.apple.y:
-            print("Nice work.")
-            return 20, False
-        print("Move.")
-        return 1, False
+            # print("Nice work.")
+            return 200., False, True
+        # print("Move.")
+        return 1., False, False

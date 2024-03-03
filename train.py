@@ -11,33 +11,43 @@ def main():
     agent = Agent()
     environment = Environment()
 
-    for i in range(EPISODE):
-        print(f"Episode {i}")
+    with open('result.txt', 'w') as file:
 
-        end = False
+        for i in range(EPISODE):
+            # print(f"Episode {i}")
 
-        agent.init_snake()
-        environment.init_apple(agent.snake)
-        playground.render(agent.snake, environment.apple)
+            reward = 0
 
-        environment.get_frame()
-        while not end:
-            s_c = environment.frame
-            a_c = agent.brain.choose_action(s_c)
+            end = False
 
-            agent.take_action(a_c)
+            agent.init_snake()
+            environment.init_apple(agent.snake)
             playground.render(agent.snake, environment.apple)
 
             environment.get_frame()
-            s_n = environment.frame
+            while not end:
+                s_c = environment.frame
+                a_c = agent.brain.choose_action(s_c)
 
-            r_c, end = environment.get_reward(agent.snake)
+                agent.take_action(a_c)
+                playground.render(agent.snake, environment.apple)
 
-            agent.brain.store_transition(s_c, a_c, r_c, s_n)
+                r_c, end, eaten = environment.get_reward(agent.snake)
+                reward += r_c
 
-            agent.brain.check_learn()
-            time.sleep(0.1)
-        # print(f"episode_r_a: {episode_r_a}, episode_r_d: {episode_r_a}")
+                environment.get_frame()
+                s_n = environment.frame
+
+                if eaten:
+                    environment.init_apple(agent.snake)
+                    playground.render(agent.snake, environment.apple)
+
+                agent.brain.store_transition(s_c, a_c, r_c, s_n)
+
+                agent.brain.check_learn()
+                # time.sleep(0.1)
+            print(f"episode_r: {reward}")
+            file.writelines(f"{reward}\n")
 
 
 if __name__ == "__main__":
