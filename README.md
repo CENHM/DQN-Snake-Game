@@ -1,2 +1,2 @@
 # DQN-Snake-Game
-A Deep reinforcement learning agent for the Snake game.
+A Deep reinforcement learning agent for the Snake game. (**unfinished**)
